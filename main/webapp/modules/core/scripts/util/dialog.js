@@ -61,20 +61,6 @@ DialogSystem.showDialog = function(elmt, onCancel) {
 
   var level = DialogSystem._layers.length;
 
-  layer.keyHandler = function(evt) {
-    if (evt.keyCode == 27 && !evt.shiftKey && !evt.metaKey && !evt.altKey && !evt.ctrlKey &&
-        evt.target.tagName.toLowerCase() != "input" &&
-        evt.target.tagName.toLowerCase() != "textarea") {
-
-      DialogSystem.dismissUntil(level - 1);
-      evt.stopImmediatePropagation();
-      evt.stopPropagation();
-      evt.preventDefault();
-      return false;
-    }
-  };
-  $(document).stack("keydown", layer.keyHandler);
-
   return level;
 };
 
@@ -113,7 +99,7 @@ DialogSystem.showBusy = function(message) {
 
   var body = $('<div>').attr('id', 'loading-message').appendTo(frame);
   $('<img>').attr("src", "images/large-spinner.gif").appendTo(body);
-  $('<span>').html(" " + (message || "Working...")).appendTo(body);
+  $('<span>').html(" " + (message || $.i18n._('core-util-enc')["working"]+"...")).appendTo(body);
 
   var level = DialogSystem.showDialog(frame);
 

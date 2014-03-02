@@ -37,6 +37,24 @@ var Refine = {
   actionAreas: []
 };
 
+var lang = navigator.language.split("-")[0]
+		|| navigator.userLanguage.split("-")[0];
+var dictionary = "";
+$.ajax({
+	url : "/command/core/load-language?",
+	type : "POST",
+	async : false,
+	data : {
+	  module : "core",
+//		lang : lang
+	},
+	success : function(data) {
+		dictionary = data;
+	}
+});
+$.i18n.setDictionary(dictionary);
+// End internationalization
+
 Refine.selectActionArea = function(id) {
   $('.action-area-tab').removeClass('selected');
   $('.action-area-tab-body').css('visibility', 'hidden').css('z-index', '50');
@@ -52,7 +70,9 @@ Refine.selectActionArea = function(id) {
 
 $(function() {
   var isThereNewRelease = function() {
+    // TODO: This eeds to be modified to do checking based solely on version, not revision
     var thisRevision = OpenRefineVersion.revision;
+    var thisVersion = OpenRefineVersion.version;
 
     var revision_pattern = /r([0-9]+)/;
 
@@ -61,10 +81,15 @@ $(function() {
     }
 
     var latestRevision = OpenRefineReleases.releases[0].revision;
+    var latestVersion = OpenRefineReleases.releases[0].version;
 
     var thisRev = parseInt(revision_pattern.exec(thisRevision)[1],10);
     var latestRev = parseInt(revision_pattern.exec(OpenRefineReleases.releases[0].revision)[1],10);
 
+    // Parser version into main version and suffix which follows dash
+    // Parse version from dot separated string into array of integers
+    
+    // compare left to right, including suffix
     return latestRev > thisRev;
   };
 
@@ -75,8 +100,24 @@ $(function() {
         function(data) {
           OpenRefineVersion = data;
 
-          $("#openrefine-version").text("Version " + OpenRefineVersion.full_version);
+          $("#openrefine-version").text($.i18n._('core-index')["version"]+" " + OpenRefineVersion.full_version);
 
+          // Format of releases.js fetched from server
+//          var releases = {
+//              "homepage" : "http://code.google.com/p/google-refine/wiki/Downloads",
+//              "releases" : [
+//        {
+//        "description": "OpenRefine 2.6",
+//        "version": "2.6-alpha1",
+//    },
+//                  {
+//                      "description": "Google Refine 2.5",
+//                      "version": "2.5",
+//                      "revision": "r2407"
+//                  },
+//                  ]
+//          }
+          
           var script = $('<script></script>')
           .attr("src", "http://google-refine.googlecode.com/svn/support/releases.js")
           .attr("type", "text/javascript");
@@ -88,12 +129,12 @@ $(function() {
                 var container = $('<div id="notification-container">')
                 .appendTo(document.body);
                 var notification = $('<div id="notification">')
-                .text('New version! ')
+                .text($.i18n._('core-index')["new-version"]+' ')
                 .appendTo(container);
                 $('<a>')
                 .addClass('notification-action')
                 .attr("href", releases.homepage)
-                .text('Download ' + releases.releases[0].description + ' now.')
+                .text($.i18n._('core-index')["download"]+' ' + releases.releases[0].description + ' '+$.i18n._('core-index')["now"]+'.')
                 .appendTo(notification);
               }
             } else {
@@ -173,6 +214,13 @@ $(function() {
     renderActionArea(Refine.actionAreas[i]);
   }
   Refine.selectActionArea('create-project');
+  
+  $("#slogan").text($.i18n._('core-index')["slogan"]+".");
+  $("#or-index-help").text($.i18n._('core-index')["help"]);
+  $("#or-index-about").text($.i18n._('core-index')["about"]);
+  $("#or-index-noProj").text($.i18n._('core-index')["no-proj"]+".");
+  $("#or-index-try").text($.i18n._('core-index')["try-these"]);
+  $("#or-index-sample").text($.i18n._('core-index')["sample-data"]);
 
   showVersion();
 });

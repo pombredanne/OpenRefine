@@ -31,6 +31,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
 
+//Internationalization init
+var lang = navigator.language.split("-")[0]
+		|| navigator.userLanguage.split("-")[0];
+var dictionary = "";
+$.ajax({
+	url : "/command/core/load-language?",
+	type : "POST",
+	async : false,
+	data : {
+	  module : "gdata",
+//		lang : lang
+	},
+	success : function(data) {
+		dictionary = data;
+	}
+});
+$.i18n.setDictionary(dictionary);
+// End internationalization
+
 Refine.GDataImportingController = function(createProjectUI) {
   this._createProjectUI = createProjectUI;
   
@@ -41,11 +60,14 @@ Refine.GDataImportingController = function(createProjectUI) {
     id: "gdata-source",
     ui: new Refine.GDataSourceUI(this)
   });
+  
+  $('#gdata-authorize').text($.i18n._('gdata-auth')["authorize-label"]); 
+  $('#gdata-authorized').text($.i18n._('gdata-auth')["authorized-label"]);
 };
 Refine.CreateProjectUI.controllers.push(Refine.GDataImportingController);
 
 Refine.GDataImportingController.prototype.startImportingDocument = function(doc) {
-  var dismiss = DialogSystem.showBusy("Preparing ...");
+  var dismiss = DialogSystem.showBusy($.i18n._('gdata-import')["preparing"]);
   
   var self = this;
   $.post(
@@ -143,6 +165,27 @@ Refine.GDataImportingController.prototype._showParsingPanel = function() {
           'scripts/index/gdata-parsing-panel.html'));
   this._parsingPanelElmts = DOM.bind(this._parsingPanel);
   
+  if(this._doc.type != 'table'){
+	  this._parsingPanelElmts.gdata_worksheet.html($.i18n._('gdata-parsing')["worksheet"]); 
+	  this._parsingPanelElmts.gdata_ignore_first.html($.i18n._('gdata-parsing')["ignore-first"]);
+	  this._parsingPanelElmts.gdata_ignore.html($.i18n._('gdata-parsing')["ignore"]);
+	  this._parsingPanelElmts.gdata_parse_next.html($.i18n._('gdata-parsing')["parse-next"]);
+	  this._parsingPanelElmts.gdata_parse.html($.i18n._('gdata-parsing')["parse"]);
+  }
+  this._parsingPanelElmts.startOverButton.html($.i18n._('gdata-parsing')["start-over"]);
+  this._parsingPanelElmts.gdata_conf_pars.html($.i18n._('gdata-parsing')["conf-pars"]);
+  this._parsingPanelElmts.gdata_proj_name.html($.i18n._('gdata-parsing')["proj-name"]);
+  this._parsingPanelElmts.createProjectButton.html($.i18n._('gdata-parsing')["create-proj"]);
+  this._parsingPanelElmts.gdata_options.html($.i18n._('gdata-parsing')["option"]);
+  this._parsingPanelElmts.previewButton.html($.i18n._('gdata-parsing')["preview-button"]);
+  this._parsingPanelElmts.gdata_updating.html($.i18n._('gdata-parsing')["updating-preview"]);
+  this._parsingPanelElmts.gdata_discard_next.html($.i18n._('gdata-parsing')["discard-next"]);
+  this._parsingPanelElmts.gdata_discard.html($.i18n._('gdata-parsing')["discard"]);
+  this._parsingPanelElmts.gdata_limit_next.html($.i18n._('gdata-parsing')["limit-next"]);
+  this._parsingPanelElmts.gdata_limit.html($.i18n._('gdata-parsing')["limit"]);
+  this._parsingPanelElmts.gdata_store_row.html($.i18n._('gdata-parsing')["store-row"]);
+  this._parsingPanelElmts.gdata_store_cell.html($.i18n._('gdata-parsing')["store-cell"]);
+  
   if (this._parsingPanelResizer) {
     $(window).unbind('resize', this._parsingPanelResizer);
   }
@@ -192,7 +235,7 @@ Refine.GDataImportingController.prototype._showParsingPanel = function() {
   if (this._doc.type != 'table') {
     var sheetTable = this._parsingPanelElmts.sheetRecordContainer[0];
     $.each(this._options.worksheets, function(i, v) {
-      var id = 'gdata-worksheet-' + Math.round(Math.random() * 1000000);
+      var id = 'gdata_worksheet-' + Math.round(Math.random() * 1000000);
       
       var tr = sheetTable.insertRow(sheetTable.rows.length);
       var td0 = $(tr.insertCell(0)).attr('width', '1%');
@@ -203,7 +246,7 @@ Refine.GDataImportingController.prototype._showParsingPanel = function() {
       .attr('sheetUrl', this.link)
       .appendTo(td0);
       if (i === 0) {
-        checkbox.attr('checked', 'true');
+        checkbox.prop("checked", true);
       }
       
       $('<label>')
@@ -218,28 +261,28 @@ Refine.GDataImportingController.prototype._showParsingPanel = function() {
     });
 
     if (this._options.ignoreLines > 0) {
-      this._parsingPanelElmts.ignoreCheckbox.attr("checked", "checked");
+      this._parsingPanelElmts.ignoreCheckbox.prop("checked", true);
       this._parsingPanelElmts.ignoreInput[0].value = this._options.ignoreLines.toString();
     }
     if (this._options.headerLines > 0) {
-      this._parsingPanelElmts.headerLinesCheckbox.attr("checked", "checked");
+      this._parsingPanelElmts.headerLinesCheckbox.prop("checked", true);
       this._parsingPanelElmts.headerLinesInput[0].value = this._options.headerLines.toString();
     }
   }
   
   if (this._options.limit > 0) {
-    this._parsingPanelElmts.limitCheckbox.attr("checked", "checked");
+    this._parsingPanelElmts.limitCheckbox.prop("checked", true);
     this._parsingPanelElmts.limitInput[0].value = this._options.limit.toString();
   }
   if (this._options.skipDataLines > 0) {
-    this._parsingPanelElmts.skipCheckbox.attr("checked", "checked");
+    this._parsingPanelElmts.skipCheckbox.prop("checked", true);
     this._parsingPanelElmts.skipInput.value[0].value = this._options.skipDataLines.toString();
   }
   if (this._options.storeBlankRows) {
-    this._parsingPanelElmts.storeBlankRowsCheckbox.attr("checked", "checked");
+    this._parsingPanelElmts.storeBlankRowsCheckbox.prop("checked", true);
   }
   if (this._options.storeBlankCellsAsNulls) {
-    this._parsingPanelElmts.storeBlankCellsAsNullsCheckbox.attr("checked", "checked");
+    this._parsingPanelElmts.storeBlankCellsAsNullsCheckbox.prop("checked", true);
   }
 
   var onChange = function() {
@@ -376,7 +419,7 @@ Refine.GDataImportingController.prototype._createProject = function() {
           },
           1000
         );
-        self._createProjectUI.showImportProgressPanel("Creating project ...", function() {
+        self._createProjectUI.showImportProgressPanel($.i18n._('gdata-import')["creating"], function() {
           // stop the timed polling
           window.clearInterval(timerID);
 

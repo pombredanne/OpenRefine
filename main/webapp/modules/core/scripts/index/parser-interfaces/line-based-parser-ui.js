@@ -110,6 +110,22 @@ Refine.LineBasedParserUI.prototype._initialize = function() {
   this._optionContainerElmts = DOM.bind(this._optionContainer);
   this._optionContainerElmts.previewButton.click(function() { self._updatePreview(); });
 
+  $('#or-import-encoding').html($.i18n._('core-index-import')["char-encoding"]);
+  this._optionContainerElmts.previewButton.html($.i18n._('core-buttons')["update-preview"]);
+  $('#or-import-parseEvery').html($.i18n._('core-index-parser')["parse-every"]);
+  $('#or-impor-linesIntoRow').html($.i18n._('core-index-parser')["lines-into-row"]);
+  $('#or-import-blank').text($.i18n._('core-index-parser')["store-blank"]);
+  $('#or-import-null').text($.i18n._('core-index-parser')["store-nulls"]);
+  $('#or-import-source').html($.i18n._('core-index-parser')["store-source"]);
+  $('#or-import-ignore').text($.i18n._('core-index-parser')["ignore-first"]);
+  $('#or-import-lines').text($.i18n._('core-index-parser')["lines-beg"]);
+  $('#or-import-parse').text($.i18n._('core-index-parser')["parse-next"]);
+  $('#or-import-header').text($.i18n._('core-index-parser')["lines-header"]);
+  $('#or-import-discard').text($.i18n._('core-index-parser')["discard-initial"]);
+  $('#or-import-rows').text($.i18n._('core-index-parser')["rows-data"]);
+  $('#or-import-load').text($.i18n._('core-index-parser')["load-at-most"]);
+  $('#or-import-rows2').text($.i18n._('core-index-parser')["rows-data"]);
+  
   this._optionContainerElmts.encodingInput
     .attr('value', this._config.encoding || '')
     .click(function() {
@@ -122,25 +138,25 @@ Refine.LineBasedParserUI.prototype._initialize = function() {
     this._config.linesPerRow.toString();
 
   if (this._config.ignoreLines > 0) {
-    this._optionContainerElmts.ignoreCheckbox.attr("checked", "checked");
+    this._optionContainerElmts.ignoreCheckbox.prop("checked", true);
     this._optionContainerElmts.ignoreInput[0].value = this._config.ignoreLines.toString();
   }
   if (this._config.limit > 0) {
-    this._optionContainerElmts.limitCheckbox.attr("checked", "checked");
+    this._optionContainerElmts.limitCheckbox.prop("checked", true);
     this._optionContainerElmts.limitInput[0].value = this._config.limit.toString();
   }
   if (this._config.skipDataLines > 0) {
-    this._optionContainerElmts.skipCheckbox.attr("checked", "checked");
+    this._optionContainerElmts.skipCheckbox.prop("checked", true);
     this._optionContainerElmts.skipInput.value[0].value = this._config.skipDataLines.toString();
   }
   if (this._config.storeBlankRows) {
-    this._optionContainerElmts.storeBlankRowsCheckbox.attr("checked", "checked");
+    this._optionContainerElmts.storeBlankRowsCheckbox.prop("checked", true);
   }
   if (this._config.storeBlankCellsAsNulls) {
-    this._optionContainerElmts.storeBlankCellsAsNullsCheckbox.attr("checked", "checked");
+    this._optionContainerElmts.storeBlankCellsAsNullsCheckbox.prop("checked", true);
   }
   if (this._config.includeFileSources) {
-    this._optionContainerElmts.includeFileSourcesCheckbox.attr("checked", "checked");
+    this._optionContainerElmts.includeFileSourcesCheckbox.prop("checked", true);
   }
 
   var onChange = function() {
