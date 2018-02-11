@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ########################################################## 
 #               OpenRefine Control System             #
@@ -15,12 +15,12 @@ exit 1
 }
 
 error() {
-    echo "$1"
+    echo "Error: $1"
     exit 1
 }
 
 warn() {
-    echo "$1"
+    echo "Warning: $1"
     exit 0
 }
 
@@ -66,6 +66,7 @@ and <action> is one of
    test ................................ Run all OpenRefine tests
    server_test ......................... Run only the server tests
    ui_test ............................. Run only the UI tests
+   extensions_test ..................... Run only the extensions tests
 
    broker .............................. Run OpenRefine Broker
    
@@ -340,10 +341,9 @@ appengine_prepare() {
 launch4j_prepare() {
     tools_prepare
 
-    L4J_VERSION="3.1.0-beta1" # buggy!
-    L4J_VERSION="3.0.2"
+    L4J_VERSION="3.8"
     if [ "$OS" = "macosx" ] ; then
-        LAUNCH4J_URL="http://downloads.sourceforge.net/project/launch4j/launch4j-3/${L4J_VERSION}/launch4j-${L4J_VERSION}-macosx.tgz"
+        LAUNCH4J_URL="http://downloads.sourceforge.net/project/launch4j/launch4j-3/${L4J_VERSION}/launch4j-${L4J_VERSION}-macosx-x86-10.8.tgz"
     elif [ "$OS" = "windows" ] ; then
         LAUNCH4J_URL="http://downloads.sourceforge.net/project/launch4j/launch4j-3/${L4J_VERSION}/launch4j-${L4J_VERSION}-win32.zip"
     elif [ "$OS" = "linux" ] ; then
@@ -377,11 +377,12 @@ launch4j_prepare() {
 appbundler_prepare() {
     tools_prepare
     
-    APPBUNDLER_URL="http://java.net/projects/appbundler/downloads/download/appbundler-1.0.jar"
-    APPBUNDLER_DIR="."
-    APPBUNDLER_FILE=`echo $APPBUNDLER_URL | sed 's|.*/||'`
+    cp "$REFINE_TOOLS_DIR/../3rd-party/appbundler-1.0.jar" "$REFINE_TOOLS_DIR"
+    # APPBUNDLER_URL="http://java.net/projects/appbundler/downloads/download/appbundler-1.0.jar"
+    # APPBUNDLER_DIR="."
+    # APPBUNDLER_FILE=`echo $APPBUNDLER_URL | sed 's|.*/||'`
 
-    tool_download $APPBUNDLER_URL $APPBUNDLER_FILE $APPBUNDLER_DIR
+    # tool_download $APPBUNDLER_URL $APPBUNDLER_FILE $APPBUNDLER_DIR
 }
    
 virtualenv_prepare() {
@@ -532,14 +533,14 @@ mac_dist() {
     mkdir -p "$REFINE_BUILD_DIR/mac/.background"
     cp graphics/dmg_background/dmg_background.png "$REFINE_BUILD_DIR/mac/.background/dmg_background.png"
     
-    SIZE=200
+    SIZE=250
     
     if [ -f "$REFINE_BUILD_DIR/temp_refine.dmg" ] ; then
         rm "$REFINE_BUILD_DIR/temp_refine.dmg"
     fi
 
 # Sign the bundle with a self-signed cert so OS X doesn't frustrate users by making app invisible
-    codesign -s "OpenRefine Code Signing" "$REFINE_BUILD_DIR/mac/OpenRefine.app"
+    codesign --deep -s "OpenRefine Code Signing" "$REFINE_BUILD_DIR/mac/OpenRefine.app"
     spctl --assess --type execute --verbose=4 "$REFINE_BUILD_DIR/mac/OpenRefine.app"
 
     TITLE="OpenRefine $VERSION"
@@ -591,6 +592,7 @@ mac_dist() {
 test() {
     server_test $1
     ui_test $1 
+    extensions_test $1
 }
 
 ui_test() {
@@ -633,8 +635,10 @@ ui_test() {
 
 server_test() {
     ant server_test
-    
-    $RUN_CMD || error "Failed passing server tests"
+}
+
+extensions_test() {
+    ant extensions_test
 }
 
 run() {
@@ -680,6 +684,10 @@ run() {
 
     if [ "$REFINE_GOOGLE_API_KEY" ] ; then
         add_option "-Drefine.google_api_key=$REFINE_GOOGLE_API_KEY"
+    fi
+
+    if [ "$REFINE_AUTOSAVE_PERIOD" ] ; then
+        add_option "-Drefine.autosave=$REFINE_AUTOSAVE_PERIOD"
     fi
 
     CLASSPATH="$REFINE_CLASSES_DIR${SEP}$REFINE_LIB_DIR/*"
@@ -822,6 +830,22 @@ whitespace() {
     done
 }   
     
+checkJavaMajorVersion() {
+  java_ver=$("$JAVA" -version 2>&1 | grep version | cut -d ' ' -f 3 | tr -d \")
+  # Java 6, 7, 8 starts with 1.x
+  if [ ${java_ver:0:2} == "1." ] ; then
+    major=`echo ${java_ver} | sed -E 's/1\.([0-9])[0-9_.]{2,6}/\1/g'`
+  else
+    # Java 9+ starts with x using semver versioning
+    major=`echo ${java_ver} | sed -E 's/([0-9]+)(-ea|(\.[0-9]+)*)/\1/g'`
+  fi
+  
+  JAVA_VERSION=$(echo ${major} | egrep '^(6|7|8|9)')
+  if [ -z "$JAVA_VERSION" ] ; then
+    error "OpenRefine requires Java version 6 or later. If you have multiple versions of Java installed, please set the environment variable JAVA_HOME to the correct version."
+  fi
+}
+
 # -------------------------- script -----------------------------
     
 # ----- Normalize the current directory -------------------------
@@ -872,10 +896,7 @@ if [ ! -x "$JAVA" ] ; then
     error "Could not find the 'java' executable at '$JAVA', are you sure your JAVA_HOME environment variable is pointing to a proper java installation?"
 fi
 
-JAVA_VERSION=`$JAVA -version 2>&1 | grep version | cut -d ' ' -f 3 | egrep '^\"1\.(6|7|8)'`
-if [ -z "$JAVA_VERSION" ] ; then
-    error "OpenRefine requires Java version 6 or later. If you have multiple versions of Java installed, please set the environment variable JAVA_HOME to the correct version."
-fi
+checkJavaMajorVersion
 
 # ----- Parse the command line args ------------------------------------------
 
@@ -915,7 +936,27 @@ add_option "$JAVA_OPTIONS"
 if [ -z "$REFINE_MEMORY" ] ; then
     REFINE_MEMORY="1024M"
 fi
-add_option "-Xms256M -Xmx$REFINE_MEMORY -Drefine.memory=$REFINE_MEMORY"
+if [ -z "$REFINE_MIN_MEMORY" ] ; then
+    REFINE_MIN_MEMORY="256M"
+fi
+add_option "-Xms$REFINE_MIN_MEMORY -Xmx$REFINE_MEMORY -Drefine.memory=$REFINE_MEMORY"
+
+freeRam=UNKNOWN
+if [ "$OS" = "macosx" ] ; then
+	freeRam=$(top -l 1 | grep PhysMem | awk '{print $6}' | tr -d M)
+elif [ "$OS" = "linux" ] ; then
+	freeRam=$(free -m | grep -oP '\d+' | head -n 1)
+fi
+
+echo You have "$freeRam"M of free memory. 
+echo Your current configuration is set to use $REFINE_MEMORY of memory.
+echo OpenRefine can run better when given more memory. Read our FAQ on how to allocate more memory here:
+echo https://github.com/OpenRefine/OpenRefine/wiki/FAQ:-Allocate-More-Memory
+
+if [ -z "$REFINE_MAX_FORM_CONTENT_SIZE" ] ; then
+    REFINE_MAX_FORM_CONTENT_SIZE="1048576"
+fi
+add_option "-Drefine.max_form_content_size=$REFINE_MAX_FORM_CONTENT_SIZE"
 
 if [ -z "$REFINE_PORT" ] ; then
     REFINE_PORT="3333"
@@ -983,6 +1024,8 @@ case "$ACTION" in
   ui_tests) ui_test $1;;  
   server_test) server_test $1;;  
   server_tests) server_test $1;;  
+  extensions_test) extensions_test $1;;
+  extensions_tests) extensions_test $1;;
   findbugs) findbugs;;  
   pmd) pmd;;  
   cpd) cpd;;  

@@ -50,6 +50,7 @@ import com.google.refine.expr.Evaluable;
 import com.google.refine.grel.ast.VariableExpr;
 import com.google.refine.model.Column;
 import com.google.refine.model.Project;
+import com.google.refine.util.PatternSyntaxExceptionParser;
 
 public class TextSearchFacet implements Facet {
     /*
@@ -60,6 +61,7 @@ public class TextSearchFacet implements Facet {
     protected String     _query;
     protected String     _mode;
     protected boolean    _caseSensitive;
+    protected boolean    _invert;
     
     /*
      *  Derived configuration
@@ -80,6 +82,7 @@ public class TextSearchFacet implements Facet {
         writer.key("query"); writer.value(_query);
         writer.key("mode"); writer.value(_mode);
         writer.key("caseSensitive"); writer.value(_caseSensitive);
+        writer.key("invert"); writer.value(_invert);
         writer.endObject();
     }
 
@@ -104,12 +107,14 @@ public class TextSearchFacet implements Facet {
                             _query, 
                             _caseSensitive ? 0 : Pattern.CASE_INSENSITIVE);
                 } catch (java.util.regex.PatternSyntaxException e) {
-                    e.printStackTrace();
+                    PatternSyntaxExceptionParser err = new PatternSyntaxExceptionParser(e);
+                    throw new JSONException(err.getUserMessage());
                 }
             } else if (!_caseSensitive) {
                 _query = _query.toLowerCase();
             }
         }
+        _invert = o.has("invert") && o.getBoolean("invert");
     }
 
     @Override
@@ -123,14 +128,14 @@ public class TextSearchFacet implements Facet {
         Evaluable eval = new VariableExpr("value");
         
         if ("regex".equals(_mode)) {
-            return new ExpressionStringComparisonRowFilter(eval, _columnName, _cellIndex) {
+            return new ExpressionStringComparisonRowFilter(eval, _invert, _columnName, _cellIndex) {
                 @Override
                 protected boolean checkValue(String s) {
                     return _pattern.matcher(s).find();
                 };
             };
         } else {
-            return new ExpressionStringComparisonRowFilter(eval, _columnName, _cellIndex) {
+            return new ExpressionStringComparisonRowFilter(eval, _invert, _columnName, _cellIndex) {
                 @Override
                 protected boolean checkValue(String s) {
                     return (_caseSensitive ? s : s.toLowerCase()).contains(_query);

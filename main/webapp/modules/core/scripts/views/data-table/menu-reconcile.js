@@ -215,6 +215,34 @@ DataTableColumnHeaderUI.extendMenu(function(column, columnHeaderUI, menu) {
             );
           }
         },
+                {
+          id: "core/by-judgment-actions",
+          label: $.i18n._('core-views')["judg-actions"],
+          click: function() {
+            ui.browsingEngine.addFacet(
+                "list", 
+                {
+                  "name" : column.name + " "+$.i18n._('core-views')["judg-actions2"],
+                  "columnName" : column.name, 
+                  "expression" : "cell.recon.judgmentAction"
+                }
+            );
+          }
+        },
+        {
+          id: "core/by-judgment-history-entries",
+          label: $.i18n._('core-views')["judg-hist"],
+          click: function() {
+            ui.browsingEngine.addFacet(
+                "list", 
+                {
+                  "name" : column.name + " "+$.i18n._('core-views')["hist-entries"],
+                  "columnName" : column.name, 
+                  "expression" : "cell.recon.judgmentHistoryEntry"
+                }
+            );
+          }
+        },
         {},
         {
           id: "core/by-best-candidates-score",
@@ -320,54 +348,6 @@ DataTableColumnHeaderUI.extendMenu(function(column, columnHeaderUI, menu) {
       ]
     },
     {
-      id: "core/qa-facets",
-      label: $.i18n._('core-views')["qa-facets"],
-      submenu: [
-        {
-          id: "core/by-qa-results",
-          label: $.i18n._('core-views')["qa-results"],
-          click: function() {
-            ui.browsingEngine.addFacet(
-                "list", 
-                {
-                  "name" : column.name + " "+$.i18n._('core-views')["qa-results2"],
-                  "columnName" : column.name, 
-                  "expression" : "cell.recon.features.qaResult"
-                }
-            );
-          }
-        },
-        {
-          id: "core/by-judgment-actions",
-          label: $.i18n._('core-views')["judg-actions"],
-          click: function() {
-            ui.browsingEngine.addFacet(
-                "list", 
-                {
-                  "name" : column.name + " "+$.i18n._('core-views')["judg-actions2"],
-                  "columnName" : column.name, 
-                  "expression" : "cell.recon.judgmentAction"
-                }
-            );
-          }
-        },
-        {
-          id: "core/by-judgment-history-entries",
-          label: $.i18n._('core-views')["judg-hist"],
-          click: function() {
-            ui.browsingEngine.addFacet(
-                "list", 
-                {
-                  "name" : column.name + " "+$.i18n._('core-views')["hist-entries"],
-                  "columnName" : column.name, 
-                  "expression" : "cell.recon.judgmentHistoryEntry"
-                }
-            );
-          }
-        }
-      ]
-    },
-    {
       id: "core/actions",
       label: $.i18n._('core-views')["actions"],
       submenu: [
@@ -385,11 +365,10 @@ DataTableColumnHeaderUI.extendMenu(function(column, columnHeaderUI, menu) {
             doReconMarkNewTopics(false);
           }
         },
-        {},
         {
           id: "core/match-similar-to-new-topic",
-          label: $.i18n._('core-views')["new-topic"],
-          tooltip: $.i18n._('core-views')["new-topic2"],
+          label: $.i18n._('core-views')["one-topic"],
+          tooltip: $.i18n._('core-views')["one-topic2"],
           click: function() {
             doReconMarkNewTopics(true);
           }

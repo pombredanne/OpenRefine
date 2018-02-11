@@ -140,7 +140,7 @@ DataTableColumnHeaderUI.prototype._createMenuForColumnHeader = function(elmt) {
     ),
     {
       id: "core/view",
-      label: "View",
+      label: $.i18n._('core-views')["view"],
       tooltip: $.i18n._('core-views')["collapse-expand"],
       submenu: [
         {
@@ -187,7 +187,7 @@ DataTableColumnHeaderUI.prototype._createMenuForColumnHeader = function(elmt) {
     {
       id: "core/reconcile",
       label: $.i18n._('core-views')["reconcile"],
-      tooltip: $.i18n._('core-views')["match-fb"],
+      tooltip: $.i18n._('core-views')["reconcile-tooltip"],
       width: "170px",
       submenu: []
     }
@@ -327,7 +327,7 @@ DataTableColumnHeaderUI.prototype._showSortingCriterion = function(criterion, ha
   elmts.blankErrorPositions.html(positionsHtml.join("")).sortable().disableSelection();
 
   var level = DialogSystem.showDialog(frame);
-  var dismiss = function() { DialogSystem.dismissUntil(level - 1); };
+  var dismiss = function() { DialogSystem.dismissLevel(level - 1); };
 
   setValueType(criterion.valueType); 
 

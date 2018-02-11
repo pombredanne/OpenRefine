@@ -35,15 +35,16 @@ package com.google.refine.model;
 
 import java.io.Serializable;
 import java.io.Writer;
-import java.util.Calendar;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Properties;
 
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonToken;
 import org.json.JSONException;
 import org.json.JSONWriter;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 
 import com.google.refine.Jsonizable;
 import com.google.refine.expr.EvalError;
@@ -51,6 +52,7 @@ import com.google.refine.expr.ExpressionUtils;
 import com.google.refine.expr.HasFields;
 import com.google.refine.util.ParsingUtilities;
 import com.google.refine.util.Pool;
+import com.google.refine.util.StringUtils;
 
 public class Cell implements HasFields, Jsonizable {
     final public Serializable   value;
@@ -85,11 +87,11 @@ public class Cell implements HasFields, Jsonizable {
         } else {
             writer.key("v");
             if (value != null) {
-                if (value instanceof Calendar) {
-                    writer.value(ParsingUtilities.dateToString(((Calendar) value).getTime()));
+                if (value instanceof LocalDateTime) {
+                    writer.value(ParsingUtilities.localDateToString((LocalDateTime)value));
                     writer.key("t"); writer.value("date");
-                } else if (value instanceof Date) {
-                    writer.value(ParsingUtilities.dateToString((Date) value));
+                } else if (value instanceof OffsetDateTime) {
+                    writer.value(ParsingUtilities.dateToString((OffsetDateTime) value));
                     writer.key("t"); writer.value("date");
                 } else if (value instanceof Double 
                         && (((Double)value).isNaN() || ((Double)value).isInfinite())) {
@@ -193,6 +195,6 @@ public class Cell implements HasFields, Jsonizable {
     
     @Override
     public String toString() {
-        return value.toString();
+        return StringUtils.toString(value);
     }
 }

@@ -34,26 +34,23 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.google.refine.importers;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import com.google.refine.ProjectMetadata;
 import com.google.refine.expr.ExpressionUtils;
 import com.google.refine.importing.ImportingJob;
 import com.google.refine.model.Cell;
 import com.google.refine.model.Column;
-import com.google.refine.model.ModelException;
 import com.google.refine.model.Project;
 import com.google.refine.model.Row;
+import com.google.refine.model.medadata.ProjectMetadata;
 import com.google.refine.util.JSONUtilities;
 
 abstract public class TabularImportingParserBase extends ImportingParserBase {
-    private final static Logger logger = LoggerFactory.getLogger("ImportingParserBase");
     static public interface TableDataReader {
         public List<Object> getNextRowOfCells() throws IOException;
     }
@@ -108,18 +105,10 @@ abstract public class TabularImportingParserBase extends ImportingParserBase {
         boolean storeBlankRows = JSONUtilities.getBoolean(options, "storeBlankRows", true);
         boolean storeBlankCellsAsNulls = JSONUtilities.getBoolean(options, "storeBlankCellsAsNulls", true);
         boolean includeFileSources = JSONUtilities.getBoolean(options, "includeFileSources", false);
-        
-        String fileNameColumnName = "File";
+
+        int filenameColumnIndex = -1;
         if (includeFileSources) {
-            if (project.columnModel.getColumnByName(fileNameColumnName) == null) {
-                try {
-                    project.columnModel.addColumn(
-                        0, new Column(project.columnModel.allocateNewCellIndex(), fileNameColumnName), false);
-                } catch (ModelException e) {
-                    // Ignore: We already checked for duplicate name.
-                    logger.info("ModelException",e);
-                }
-            }
+            filenameColumnIndex = addFilenameColumn(project);
         }
         
         List<String> columnNames = new ArrayList<String>();
@@ -194,9 +183,9 @@ abstract public class TabularImportingParserBase extends ImportingParserBase {
                         }
                         
                         if (rowHasData || storeBlankRows) {
-                            if (includeFileSources) {
+                            if (includeFileSources && filenameColumnIndex >= 0) {
                                 row.setCell(
-                                    project.columnModel.getColumnByName(fileNameColumnName).getCellIndex(),
+                                    filenameColumnIndex,
                                     new Cell(fileSource, null));
                             }
                             project.rows.add(row);
@@ -211,5 +200,10 @@ abstract public class TabularImportingParserBase extends ImportingParserBase {
         } catch (IOException e) {
             exceptions.add(e);
         }
+    }
+
+    public void parseOneFile(Project project, ProjectMetadata metadata, ImportingJob job, String fileSource,
+            Reader dataReader, int limit, JSONObject options, List<Exception> exceptions) {
+        super.parseOneFile(project, metadata, job, fileSource, dataReader, limit, options, exceptions);
     }
 }

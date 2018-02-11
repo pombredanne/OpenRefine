@@ -39,11 +39,11 @@ import com.google.api.services.fusiontables.model.Column;
 import com.google.api.services.fusiontables.model.Sqlresponse;
 import com.google.api.services.fusiontables.model.Table;
 
-import com.google.refine.ProjectMetadata;
 import com.google.refine.importers.TabularImportingParserBase;
 import com.google.refine.importers.TabularImportingParserBase.TableDataReader;
 import com.google.refine.importing.ImportingJob;
 import com.google.refine.model.Project;
+import com.google.refine.model.medadata.ProjectMetadata;
 import com.google.refine.util.JSONUtilities;
 
 /**
@@ -165,7 +165,7 @@ public class FusionTableImporter {
                         List<Object> row = rows.get(i);
                         List<Object> rowOfCells = new ArrayList<Object>(row.size());
                         for (int j = 0; j < row.size() && j < columns.size(); j++) {
-                            String text = (String)row.get(j);
+                            String text = String.valueOf(row.get(j));
                             if (text.isEmpty()) {
                                 rowOfCells.add(null);
                             } else {

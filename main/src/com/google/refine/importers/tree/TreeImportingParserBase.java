@@ -39,16 +39,16 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.util.List;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.json.JSONObject;
 
-import com.google.refine.ProjectMetadata;
 import com.google.refine.importers.ImporterUtilities;
 import com.google.refine.importers.ImporterUtilities.MultiFileReadingProgress;
 import com.google.refine.importers.ImportingParserBase;
 import com.google.refine.importing.ImportingJob;
 import com.google.refine.importing.ImportingUtilities;
 import com.google.refine.model.Project;
+import com.google.refine.model.medadata.ProjectMetadata;
 import com.google.refine.util.JSONUtilities;
 
 /**
@@ -154,7 +154,7 @@ abstract public class TreeImportingParserBase extends ImportingParserBase {
         JSONObject options,
         List<Exception> exceptions
     ) {
-        throw new NotImplementedException();
+        throw new NotImplementedException("project ID:" + project.id);
     }
     
     /**
@@ -174,7 +174,8 @@ abstract public class TreeImportingParserBase extends ImportingParserBase {
         JSONObject options,
         List<Exception> exceptions
     ) {
-        throw new NotImplementedException();
+        // throw new NotImplementedException();
+        super.parseOneFile(project, metadata, job, fileSource, inputStream, limit, options, exceptions);
     }
     
     /**
@@ -210,8 +211,17 @@ abstract public class TreeImportingParserBase extends ImportingParserBase {
         boolean trimStrings = JSONUtilities.getBoolean(options, "trimStrings", true);
         boolean storeEmptyStrings = JSONUtilities.getBoolean(options, "storeEmptyStrings", false);
         boolean guessCellValueTypes = JSONUtilities.getBoolean(options, "guessCellValueTypes", true);
-
-        XmlImportUtilities.importTreeData(treeParser, project, recordPath, rootColumnGroup, limit2, trimStrings,
-                storeEmptyStrings,guessCellValueTypes);
+        
+        boolean includeFileSources = JSONUtilities.getBoolean(options, "includeFileSources", false);
+        int filenameColumnIndex = -1;
+        if (includeFileSources) {
+            filenameColumnIndex = addFilenameColumn(project);
+            // If the column add fails for any reason, we'll end up overwriting data in the first column
+            assert filenameColumnIndex == 0;
+        }
+        
+        XmlImportUtilities.importTreeData(treeParser, project, recordPath, rootColumnGroup, limit2, 
+                new ImportParameters(trimStrings, storeEmptyStrings, guessCellValueTypes, includeFileSources,
+                        fileSource));
     }
 }

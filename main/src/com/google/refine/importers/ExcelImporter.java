@@ -37,12 +37,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PushbackInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.poi.POIXMLDocument;
 import org.apache.poi.POIXMLException;
 import org.apache.poi.common.usermodel.Hyperlink;
 import org.apache.poi.hssf.usermodel.HSSFDateUtil;
@@ -52,17 +55,18 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.refine.ProjectMetadata;
 import com.google.refine.importing.ImportingJob;
 import com.google.refine.importing.ImportingUtilities;
 import com.google.refine.model.Cell;
 import com.google.refine.model.Project;
 import com.google.refine.model.Recon;
 import com.google.refine.model.Recon.Judgment;
+import com.google.refine.model.medadata.ProjectMetadata;
 import com.google.refine.model.ReconCandidate;
 import com.google.refine.util.JSONUtilities;
 
@@ -77,36 +81,37 @@ public class ExcelImporter extends TabularImportingParserBase {
     public JSONObject createParserUIInitializationData(
             ImportingJob job, List<JSONObject> fileRecords, String format) {
         JSONObject options = super.createParserUIInitializationData(job, fileRecords, format);
-        
-        boolean xmlBased = "text/xml/xlsx".equals(format);
-        JSONUtilities.safePut(options, "xmlBased", xmlBased);
-        
+
         JSONArray sheetRecords = new JSONArray();
         JSONUtilities.safePut(options, "sheetRecords", sheetRecords);
         try {
-            if (fileRecords.size() > 0) {
-                JSONObject firstFileRecord = fileRecords.get(0);
-                File file = ImportingUtilities.getFile(job, firstFileRecord);
+            for (int index = 0;index < fileRecords.size();index++) {
+                JSONObject fileRecord = fileRecords.get(index);
+                File file = ImportingUtilities.getFile(job, fileRecord);
                 InputStream is = new FileInputStream(file);
+
+                if (!is.markSupported()) {
+                  is = new PushbackInputStream(is, 8);
+                }
+
                 try {
-                    Workbook wb = xmlBased ?
+                    Workbook wb = POIXMLDocument.hasOOXMLHeader(is) ?
                             new XSSFWorkbook(is) :
                                 new HSSFWorkbook(new POIFSFileSystem(is));
 
                             int sheetCount = wb.getNumberOfSheets();
-                            boolean hasData = false;
                             for (int i = 0; i < sheetCount; i++) {
                                 Sheet sheet = wb.getSheetAt(i);
                                 int rows = sheet.getLastRowNum() - sheet.getFirstRowNum() + 1;
 
                                 JSONObject sheetRecord = new JSONObject();
-                                JSONUtilities.safePut(sheetRecord, "name", sheet.getSheetName());
+                                JSONUtilities.safePut(sheetRecord, "name",  file.getName() + "#" + sheet.getSheetName());
+                                JSONUtilities.safePut(sheetRecord, "fileNameAndSheetIndex", file.getName() + "#" + i);
                                 JSONUtilities.safePut(sheetRecord, "rows", rows);
-                                if (hasData) {
-                                    JSONUtilities.safePut(sheetRecord, "selected", false);
-                                } else if (rows > 1) {
+                                if (rows > 1) {
                                     JSONUtilities.safePut(sheetRecord, "selected", true);
-                                    hasData = true;
+                                } else {
+                                    JSONUtilities.safePut(sheetRecord, "selected", false);
                                 }
                                 JSONUtilities.append(sheetRecords, sheetRecord);
                             }
@@ -136,10 +141,13 @@ public class ExcelImporter extends TabularImportingParserBase {
         JSONObject options,
         List<Exception> exceptions
     ) {
-        boolean xmlBased = JSONUtilities.getBoolean(options, "xmlBased", false);
         Workbook wb = null;
+        if (!inputStream.markSupported()) {
+          inputStream = new PushbackInputStream(inputStream, 8);
+        }
+        
         try {
-            wb = xmlBased ?
+            wb = POIXMLDocument.hasOOXMLHeader(inputStream) ?
                 new XSSFWorkbook(inputStream) :
                 new HSSFWorkbook(new POIFSFileSystem(inputStream));
         } catch (IOException e) {
@@ -174,9 +182,22 @@ public class ExcelImporter extends TabularImportingParserBase {
                 return;
         }
         
-        int[] sheets = JSONUtilities.getIntArray(options, "sheets");
-        for (int sheetIndex : sheets) {
-            final Sheet sheet = wb.getSheetAt(sheetIndex);
+        JSONArray sheets = JSONUtilities.getArray(options, "sheets");
+        
+        for(int i=0;i<sheets.length();i++)  {
+            String[] fileNameAndSheetIndex = new String[2];
+            try {
+                JSONObject sheetObj = sheets.getJSONObject(i);
+                // value is fileName#sheetIndex
+                fileNameAndSheetIndex = sheetObj.getString("fileNameAndSheetIndex").split("#");
+            } catch (JSONException e) {
+                logger.error(ExceptionUtils.getStackTrace(e));
+            }
+            
+            if (!fileNameAndSheetIndex[0].equals(fileSource))
+                continue;
+            
+            final Sheet sheet = wb.getSheetAt(Integer.parseInt(fileNameAndSheetIndex[1]));
             final int lastRow = sheet.getLastRowNum();
             
             TableDataReader dataReader = new TableDataReader() {
@@ -218,6 +239,8 @@ public class ExcelImporter extends TabularImportingParserBase {
                 exceptions
             );
         }
+        
+        super.parseOneFile(project, metadata, job, fileSource, inputStream, limit, options, exceptions);
     }
     
     static protected Serializable extractCell(org.apache.poi.ss.usermodel.Cell cell) {

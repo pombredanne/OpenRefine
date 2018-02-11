@@ -62,7 +62,6 @@ Refine.ExcelParserUI.prototype.confirmReadyToCreateProject = function() {
 
 Refine.ExcelParserUI.prototype.getOptions = function() {
   var options = {
-    xmlBased: this._config.xmlBased,
     sheets: []
   };
 
@@ -77,10 +76,12 @@ Refine.ExcelParserUI.prototype.getOptions = function() {
     }
     return def;
   };
-
+  
+  var self = this;
+  
   this._optionContainerElmts.sheetRecordContainer.find('input').each(function() {
     if (this.checked) {
-      options.sheets.push(parseInt(this.getAttribute('index'),10));
+        options.sheets.push(self._config.sheetRecords[parseInt(this.getAttribute('index'))]);
     }
   });
 
@@ -217,5 +218,7 @@ Refine.ExcelParserUI.prototype._updatePreview = function() {
         new Refine.PreviewTable(projectData, self._dataContainer.unbind().empty());
       });
     }
+  }, function() {
+	  self._progressContainer.hide();
   });
 };

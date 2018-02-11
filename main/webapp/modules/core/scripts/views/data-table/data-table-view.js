@@ -553,9 +553,71 @@ DataTableView.prototype._addSortingCriterion = function(criterion, alone) {
   this.update();
 };
 
+/** below can be move to separate file **/
+  var doTextTransformPrompt = function() {
+    var frame = $(
+        DOM.loadHTML("core", "scripts/views/data-table/text-transform-dialog.html")
+        .replace("$EXPRESSION_PREVIEW_WIDGET$", ExpressionPreviewDialog.generateWidgetHtml()));
+
+    var elmts = DOM.bind(frame);
+    elmts.or_views_errorOn.text($.i18n._('core-views')["on-error"]);
+    elmts.or_views_keepOr.text($.i18n._('core-views')["keep-or"]);
+    elmts.or_views_setBlank.text($.i18n._('core-views')["set-blank"]);
+    elmts.or_views_storeErr.text($.i18n._('core-views')["store-err"]);
+    elmts.or_views_reTrans.text($.i18n._('core-views')["re-trans"]);
+    elmts.or_views_timesChang.text($.i18n._('core-views')["times-chang"]);
+    elmts.okButton.html($.i18n._('core-buttons')["ok"]);
+    elmts.cancelButton.text($.i18n._('core-buttons')["cancel"]);    
+
+    var level = DialogSystem.showDialog(frame);
+    var dismiss = function() { DialogSystem.dismissUntil(level - 1); };
+
+    elmts.cancelButton.click(dismiss);
+    elmts.okButton.click(function() {
+        new ExpressionColumnDialog(
+                previewWidget.getExpression(true),
+                $('input[name="text-transform-dialog-onerror-choice"]:checked')[0].value,
+                elmts.repeatCheckbox[0].checked,
+                elmts.repeatCountInput[0].value
+        );
+    });
+    
+    var previewWidget = new ExpressionPreviewDialog.Widget(
+      elmts,
+      -1,
+      [],
+      [],
+      null
+    );
+    previewWidget._prepareUpdate = function(params) {
+      params.repeat = elmts.repeatCheckbox[0].checked;
+      params.repeatCount = elmts.repeatCountInput[0].value;
+    };
+  };
+  /** above can be move to separate file **/
+  
 DataTableView.prototype._createMenuForAllColumns = function(elmt) {
   var self = this;
   var menu = [
+      /**
+        {
+            label: $.i18n._('core-views')["table-schema-validate"],
+            id: "core/facets",
+            width: "200px",
+            click: function() {
+                   doTextTransformPrompt();
+            }
+        },
+        */
+        {
+            label: $.i18n._('core-views')["transform"],
+            id: "core/facets",
+            width: "200px",
+            click: function() {
+                   doTextTransformPrompt();
+            }
+        },
+    {},
     {
       label: $.i18n._('core-views')["facet"],
       id: "core/facets",

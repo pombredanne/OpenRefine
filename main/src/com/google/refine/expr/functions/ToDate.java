@@ -35,13 +35,14 @@ package com.google.refine.expr.functions;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.Properties;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
 import org.json.JSONWriter;
 
@@ -83,7 +84,7 @@ public class ToDate implements Function {
             try {
                 return CalendarParser.parse( o1, (month_first) ? CalendarParser.MM_DD_YY : CalendarParser.DD_MM_YY);
             } catch (CalendarParserException e) {
-                Date d = ParsingUtilities.stringToDate(o1);
+                OffsetDateTime d = ParsingUtilities.stringToDate(o1);
                 if (d != null) {
                     return d;
                 } else {
@@ -178,7 +179,7 @@ public class ToDate implements Function {
     throws JSONException {
 
         writer.object();
-        writer.key("description"); writer.value("Returns o converted to a date object, you can hint if the day or the month is listed first, or give an ordered list of possible formats using this syntax: http://java.sun.com/j2se/1.4.2/docs/api/java/text/SimpleDateFormat.html");
+        writer.key("description"); writer.value("Returns o converted to a date object, you can hint if the day or the month is listed first, or give an ordered list of possible formats using this syntax: http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html");
         writer.key("params"); writer.value("o, boolean month_first / format1, format2, ... (all optional)");
         writer.key("returns"); writer.value("date");
         writer.endObject();

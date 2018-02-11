@@ -65,12 +65,18 @@ function registerCommands() {
   RS.registerCommand(module, "import-project", new Packages.com.google.refine.commands.project.ImportProjectCommand());
   RS.registerCommand(module, "export-project", new Packages.com.google.refine.commands.project.ExportProjectCommand());
   RS.registerCommand(module, "export-rows", new Packages.com.google.refine.commands.project.ExportRowsCommand());
+  RS.registerCommand(module, "project-data-package", new Packages.com.google.refine.commands.project.PackageProjectCommand());
 
   RS.registerCommand(module, "get-project-metadata", new Packages.com.google.refine.commands.project.GetProjectMetadataCommand());
   RS.registerCommand(module, "get-all-project-metadata", new Packages.com.google.refine.commands.workspace.GetAllProjectMetadataCommand());
+  RS.registerCommand(module, "set-metaData", new Packages.com.google.refine.commands.project.SetProjectMetadataCommand());
+  RS.registerCommand(module, "get-imetaData", new Packages.com.google.refine.commands.project.GetMetadataCommand());
+  RS.registerCommand(module, "get-all-project-tags", new Packages.com.google.refine.commands.workspace.GetAllProjectTagsCommand());
+  RS.registerCommand(module, "set-project-tags", new Packages.com.google.refine.commands.project.SetProjectTagsCommand());
 
   RS.registerCommand(module, "delete-project", new Packages.com.google.refine.commands.project.DeleteProjectCommand());
   RS.registerCommand(module, "rename-project", new Packages.com.google.refine.commands.project.RenameProjectCommand());
+  RS.registerCommand(module, "set-project-metadata", new Packages.com.google.refine.commands.project.SetProjectMetadataCommand());
 
   RS.registerCommand(module, "get-models", new Packages.com.google.refine.commands.project.GetModelsCommand());
   RS.registerCommand(module, "get-rows", new Packages.com.google.refine.commands.row.GetRowsCommand());
@@ -121,6 +127,8 @@ function registerCommands() {
   RS.registerCommand(module, "recon-clear-one-cell", new Packages.com.google.refine.commands.recon.ReconClearOneCellCommand());
   RS.registerCommand(module, "recon-clear-similar-cells", new Packages.com.google.refine.commands.recon.ReconClearSimilarCellsCommand());
   RS.registerCommand(module, "recon-copy-across-columns", new Packages.com.google.refine.commands.recon.ReconCopyAcrossColumnsCommand());
+  RS.registerCommand(module, "preview-extend-data", new Packages.com.google.refine.commands.recon.PreviewExtendDataCommand());
+  RS.registerCommand(module, "extend-data", new Packages.com.google.refine.commands.recon.ExtendDataCommand());
 
   RS.registerCommand(module, "guess-types-of-column", new Packages.com.google.refine.commands.recon.GuessTypesOfColumnCommand());
 
@@ -180,6 +188,7 @@ function registerOperations() {
   OR.registerOperation(module, "recon-judge-similar-cells", Packages.com.google.refine.operations.recon.ReconJudgeSimilarCellsOperation);
   OR.registerOperation(module, "recon-clear-similar-cells", Packages.com.google.refine.operations.recon.ReconClearSimilarCellsOperation);
   OR.registerOperation(module, "recon-copy-across-columns", Packages.com.google.refine.operations.recon.ReconCopyAcrossColumnsOperation);
+  OR.registerOperation(module, "extend-reconciled-data", Packages.com.google.refine.operations.recon.ExtendDataOperation);
 }
 
 function registerImporting() {
@@ -204,14 +213,14 @@ function registerImporting() {
   IM.registerFormat("text/rdf+n3", "RDF/N3 files", "RdfTriplesParserUI", new Packages.com.google.refine.importers.RdfTripleImporter());
 
   IM.registerFormat("text/xml", "XML files", "XmlParserUI", new Packages.com.google.refine.importers.XmlImporter());
-  IM.registerFormat("text/xml/xlsx", "Excel (.xlsx) files", "ExcelParserUI", new Packages.com.google.refine.importers.ExcelImporter());
+  IM.registerFormat("binary/text/xml/xls/xlsx", "Excel files", "ExcelParserUI", new Packages.com.google.refine.importers.ExcelImporter());
   IM.registerFormat("text/xml/ods", "Open Document Format spreadsheets (.ods)", "ExcelParserUI", new Packages.com.google.refine.importers.OdsImporter());
   IM.registerFormat("text/xml/rdf", "RDF/XML files", "RdfTriplesParserUI", new Packages.com.google.refine.importers.RdfXmlTripleImporter());
   IM.registerFormat("text/json", "JSON files", "JsonParserUI", new Packages.com.google.refine.importers.JsonImporter());
   IM.registerFormat("text/marc", "MARC files", "XmlParserUI", new Packages.com.google.refine.importers.MarcImporter());
+  IM.registerFormat("text/wiki", "Wikitext", "WikitextParserUI", new Packages.com.google.refine.importers.WikitextImporter());
 
   IM.registerFormat("binary", "Binary files"); // generic format, no parser to handle it
-  IM.registerFormat("binary/xls", "Excel files", "ExcelParserUI", new Packages.com.google.refine.importers.ExcelImporter());
 
   IM.registerFormat("service", "Services"); // generic format, no parser to handle it
 
@@ -228,8 +237,8 @@ function registerImporting() {
   IM.registerExtension(".json", "text/json");
   IM.registerExtension(".js", "text/json");
 
-  IM.registerExtension(".xls", "binary/xls");
-  IM.registerExtension(".xlsx", "text/xml/xlsx");
+  IM.registerExtension(".xls", "binary/text/xml/xls/xlsx");
+  IM.registerExtension(".xlsx", "binary/text/xml/xls/xlsx");
 
   IM.registerExtension(".ods", "text/xml/ods");
   
@@ -237,6 +246,8 @@ function registerImporting() {
 
   IM.registerExtension(".marc", "text/marc");
   IM.registerExtension(".mrc", "text/marc");
+
+  IM.registerExtension(".wiki", "text/wiki");
 
   /*
    *  Mime type to format mappings
@@ -250,13 +261,13 @@ function registerImporting() {
   
   IM.registerMimeType("text/rdf+n3", "text/rdf+n3");
 
-  IM.registerMimeType("application/msexcel", "binary/xls");
-  IM.registerMimeType("application/x-msexcel", "binary/xls");
-  IM.registerMimeType("application/x-ms-excel", "binary/xls");
-  IM.registerMimeType("application/vnd.ms-excel", "binary/xls");
-  IM.registerMimeType("application/x-excel", "binary/xls");
-  IM.registerMimeType("application/xls", "binary/xls");
-  IM.registerMimeType("application/x-xls", "text/xml/xlsx");
+  IM.registerMimeType("application/msexcel", "binary/text/xml/xls/xlsx");
+  IM.registerMimeType("application/x-msexcel", "binary/text/xml/xls/xlsx");
+  IM.registerMimeType("application/x-ms-excel", "binary/text/xml/xls/xlsx");
+  IM.registerMimeType("application/vnd.ms-excel", "binary/text/xml/xls/xlsx");
+  IM.registerMimeType("application/x-excel", "binary/text/xml/xls/xlsx");
+  IM.registerMimeType("application/xls", "binary/text/xml/xls/xlsx");
+  IM.registerMimeType("application/x-xls", "binary/text/xml/xls/xlsx");
   
   IM.registerMimeType("application/vnd.oasis.opendocument.spreadsheet","text/xml/ods");
 
@@ -267,6 +278,8 @@ function registerImporting() {
   IM.registerMimeType("application/rdf+xml", "text/xml/rdf");
 
   IM.registerMimeType("application/marc", "text/marc");
+  
+  IM.registerUrlRewriter(new Packages.com.google.refine.model.medadata.DataPackageUrlRewriter());
 
   /*
    *  Format guessers: these take a format derived from extensions or mime-types,
@@ -312,6 +325,11 @@ function init() {
       "externals/jquery-ui/jquery-ui-1.10.3.custom.js",
       "externals/date.js",
       "externals/jquery.i18n.js",
+      "externals/tablesorter/jquery.tablesorter.min.js",
+      "externals/moment-with-locales.min.js",
+      "externals/jsoneditor/jsoneditor.js",
+      "externals/select2/select2.min.js",
+      "externals/jquery.lavalamp.min.js",
 
       "scripts/util/misc.js",
       "scripts/util/url.js",
@@ -323,6 +341,7 @@ function init() {
       "scripts/util/date-time.js",
       "scripts/util/encoding.js",
       "scripts/util/sign.js",
+      "scripts/util/filter-lists.js",
 
       "scripts/index.js",
       "scripts/index/create-project-ui.js",
@@ -342,7 +361,12 @@ function init() {
       "scripts/index/parser-interfaces/excel-parser-ui.js",
       "scripts/index/parser-interfaces/xml-parser-ui.js",
       "scripts/index/parser-interfaces/json-parser-ui.js",
-      "scripts/index/parser-interfaces/rdf-triples-parser-ui.js"
+      "scripts/index/parser-interfaces/rdf-triples-parser-ui.js",
+      "scripts/index/parser-interfaces/wikitext-parser-ui.js",
+
+      "scripts/reconciliation/recon-manager.js", // so that reconciliation functions are available to importers
+      "scripts/index/edit-metadata-dialog.js",
+      "scripts/project/edit-general-metadata-dialog.js"
     ]
   );
 
@@ -351,11 +375,14 @@ function init() {
     module,
     [
       "externals/jquery-ui/css/ui-lightness/jquery-ui-1.10.3.custom.css",
+      "externals/select2/select2.css",
+      "externals/tablesorter/theme.blue.css",
       "styles/jquery-ui-overrides.less",
       "styles/common.less",
       "styles/pure.css",
       "styles/util/dialog.less",
       "styles/util/encoding.less",
+      "externals/jsoneditor/jsoneditor.css",
       
       "styles/index.less",
       "styles/index/create-project-ui.less",
@@ -370,7 +397,8 @@ function init() {
       "styles/views/data-table-view.less", // for the preview table's styles
       "styles/index/fixed-width-parser-ui.less",
       "styles/index/xml-parser-ui.less",
-      "styles/index/json-parser-ui.less"
+      "styles/index/json-parser-ui.less",
+      "styles/index/wikitext-parser-ui.less"
     ]
   );
 
@@ -387,6 +415,7 @@ function init() {
       "externals/date.js",
       "externals/jquery.i18n.js",
       "externals/underscore-min.js",
+      "externals/jsoneditor/jsoneditor.js",
 
       "scripts/project.js",
 
@@ -429,15 +458,18 @@ function init() {
 
       "scripts/reconciliation/recon-manager.js",
       "scripts/reconciliation/recon-dialog.js",
-      "scripts/reconciliation/freebase-query-panel.js",
       "scripts/reconciliation/standard-service-panel.js",
 
       "scripts/dialogs/expression-preview-dialog.js",
+      "scripts/dialogs/extend-data-preview-dialog.js",
       "scripts/dialogs/clustering-dialog.js",
       "scripts/dialogs/scatterplot-dialog.js",
       "scripts/dialogs/templating-exporter-dialog.js",
       "scripts/dialogs/column-reordering-dialog.js",
-      "scripts/dialogs/custom-tabular-exporter-dialog.js"
+      "scripts/dialogs/custom-tabular-exporter-dialog.js",
+      "scripts/dialogs/expression-column-dialog.js",
+      "scripts/project/edit-general-metadata-dialog.js",
+      "scripts/dialogs/http-headers-dialog.js",
     ]
   );
 
@@ -448,6 +480,7 @@ function init() {
       "externals/suggest/css/suggest-4_3.min.css",
       "externals/jquery-ui/css/ui-lightness/jquery-ui-1.10.3.custom.css",
       "externals/imgareaselect/css/imgareaselect-default.css",
+      "externals/jsoneditor/jsoneditor.css",
 
       "styles/jquery-ui-overrides.less",
       "styles/common.less",
@@ -475,7 +508,8 @@ function init() {
       "styles/dialogs/custom-tabular-exporter-dialog.less",
 
       "styles/reconciliation/recon-dialog.less",
-      "styles/reconciliation/standard-service-panel.less"
+      "styles/reconciliation/standard-service-panel.less",
+      "styles/reconciliation/extend-data-preview-dialog.less",
     ]
   );
 
@@ -491,6 +525,7 @@ function init() {
       "externals/imgareaselect/jquery.imgareaselect.js",
       "externals/date.js",
       "externals/jquery.i18n.js",
+      "externals/underscore-min.js",
       "scripts/preferences.js",
     ]
   );

@@ -106,8 +106,6 @@ DataTableCellUI.prototype._render = function() {
 
       if (service && (service.view) && (service.view.url)) {
         a.attr("href", encodeURI(service.view.url.replace("{{id}}", match.id)));
-      } else if (ReconciliationManager.isFreebaseIdOrMid(r.identifierSpace)) {
-        a.attr("href", "http://www.freebase.com/view" + match.id);
       }
 
       $('<span> </span>').appendTo(divContent);
@@ -145,22 +143,18 @@ DataTableCellUI.prototype._render = function() {
             var a = $('<a></a>')
             .addClass("data-table-recon-topic")
             .attr("target", "_blank")
-            .text(_.unescape(candidate.name))
+            .text(_.unescape(candidate.name)) // TODO: only use of _.unescape - consolidate
             .appendTo(li);
 
             if ((service) && (service.view) && (service.view.url)) {
               a.attr("href", encodeURI(service.view.url.replace("{{id}}", candidate.id)));
-            } else if (ReconciliationManager.isFreebaseIdOrMid(r.identifierSpace)) {
-              a.attr("href", "http://www.freebase.com/view" + candidate.id);
             }
 
             var preview = null;
-            if ((service) && (service.preview) 
-                && service.preview.url.indexOf("http://www.freebase.com/widget/topic") < 0) {
+            if ((service) && (service.preview)) {
               preview = service.preview;
-            } else if (ReconciliationManager.isFreebaseIdOrMid(r.identifierSpace)) {
-              preview = DataTableCellUI.internalPreview;
             }
+
             if (preview) {
               a.click(function(evt) {
                 if (!evt.metaKey && !evt.ctrlKey) {
@@ -206,8 +200,6 @@ DataTableCellUI.prototype._render = function() {
         var addSuggest = false;
         if ((service) && (service.suggest) && (service.suggest.entity)) {
           suggestOptions = service.suggest.entity;
-          addSuggest = true;
-        } else if (ReconciliationManager.isFreebaseIdOrMid(r.identifierSpace)) {
           addSuggest = true;
         }
 
@@ -436,6 +428,7 @@ DataTableCellUI.prototype._postProcessSeveralCells = function(command, params, b
   );
 };
 
+// TODO delete this
 DataTableCellUI.internalPreview = {
   srchurl: 'https://www.googleapis.com/freebase/v1/search?filter=(all mid:${id})'
     + '&output=(notable:/client/summary (description citation provenance) type)'
@@ -455,7 +448,7 @@ DataTableCellUI.prototype._previewCandidateTopic = function(candidate, elmt, pre
   .html(DOM.loadHTML("core", "scripts/views/data-table/cell-recon-preview-popup-header.html"));
 
   if (preview && preview.url) { // Service has a preview URL associated with it
-    var url = encodeURI(preview.srch.replace("{{id}}", id));
+    var url = encodeURI(preview.url.replace("{{id}}", id));
     var iframe = $('<iframe></iframe>')
     .width(preview.width)
     .height(preview.height)

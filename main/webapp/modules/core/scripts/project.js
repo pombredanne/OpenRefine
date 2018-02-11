@@ -37,7 +37,7 @@ var ui = {};
 var lang = (navigator.language|| navigator.userLanguage).split("-")[0];
 var dictionary = "";
 $.ajax({
-	url : "/command/core/load-language?",
+	url : "command/core/load-language?",
 	type : "POST",
 	async : false,
 	data : {
@@ -62,8 +62,6 @@ Refine.reportException = function(e) {
 };
 
 function resize() {
-  var header = $("#header");
-
   var leftPanelWidth = 300;
   var width = $(window).width();
   var top = $("#header").outerHeight();
@@ -155,12 +153,8 @@ function initializeUI(uiState) {
   ui.historyPanel = new HistoryPanel(ui.historyPanelDiv, ui.historyTabHeader);
   ui.dataTableView = new DataTableView(ui.viewPanelDiv);
 
-  ui.leftPanelTabs.bind('tabsshow', function(event, tabs) {
-    if (tabs.index === 0) {
-      ui.browsingEngine.resize();
-    } else if (tabs.index === 1) {
-      ui.historyPanel.resize();
-    }
+  ui.leftPanelTabs.bind('tabsactivate', function(event, tabs) {
+    tabs.newPanel.resize();
   });
 
   $(window).bind("resize", resizeAll);
@@ -184,7 +178,7 @@ Refine.reinitializeProjectData = function(f, fError) {
   $.getJSON(
     "command/core/get-project-metadata?" + $.param({ project: theProject.id }), null,
     function(data) {
-      if (data.status == 'error') {
+      if (data.status == "error") {
         alert(data.message);
         if (fError) {
           fError();
@@ -226,7 +220,7 @@ Refine._renameProject = function() {
     data: { "project" : theProject.id, "name" : name },
     dataType: "json",
     success: function (data) {
-      if (data && typeof data.code != 'undefined' && data.code == "ok") {
+      if (data && typeof data.code != "undefined" && data.code == "ok") {
         theProject.metadata.name = name;
         Refine.setTitle();
       } else {
@@ -431,9 +425,12 @@ Refine.fetchRows = function(start, limit, onDone, sorting) {
   }
 
   $.post(
-    "command/core/get-rows?" + $.param({ project: theProject.id, start: start, limit: limit }) + "&callback=?",
+    "command/core/get-rows?" + $.param({ project: theProject.id, start: start, limit: limit }),
     body,
     function(data) {
+      if(data.code === "error") {
+        data = theProject.rowModel;
+      }
       theProject.rowModel = data;
 
       // Un-pool objects
@@ -451,14 +448,14 @@ Refine.fetchRows = function(start, limit, onDone, sorting) {
         onDone();
       }
     },
-    "jsonp"
+    "json"
   );
 };
 
 Refine.getPermanentLink = function() {
   var params = [
-    "project=" + escape(theProject.id),
-    "ui=" + escape(JSON.stringify({
+    "project=" + encodeURIComponent(theProject.id),
+    "ui=" + encodeURIComponent(JSON.stringify({
       facets: ui.browsingEngine.getFacetUIStates()
     }))
   ];
@@ -475,7 +472,7 @@ function onLoad() {
     var uiState = {};
     if ("ui" in params) {
       try {
-        uiState = JSON.parse(params.ui);
+        uiState = JSON.parse(decodeURIComponent(params.ui));
       } catch (e) {
       }
     }

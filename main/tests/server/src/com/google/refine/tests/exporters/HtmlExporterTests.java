@@ -50,7 +50,6 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 import com.google.refine.ProjectManager;
-import com.google.refine.ProjectMetadata;
 import com.google.refine.browsing.Engine;
 import com.google.refine.exporters.HtmlTableExporter;
 import com.google.refine.exporters.WriterExporter;
@@ -59,6 +58,7 @@ import com.google.refine.model.Column;
 import com.google.refine.model.ModelException;
 import com.google.refine.model.Project;
 import com.google.refine.model.Row;
+import com.google.refine.model.medadata.ProjectMetadata;
 import com.google.refine.tests.ProjectManagerStub;
 import com.google.refine.tests.RefineTest;
 
@@ -117,7 +117,9 @@ public class HtmlExporterTests extends RefineTest {
         }
 
         Assert.assertEquals(writer.toString(), "<html>\n" +
-                "<head><title>" + TEST_PROJECT_NAME + "</title></head>\n" +
+                "<head>\n" + "<title>" + TEST_PROJECT_NAME + "</title>\n" + 
+                "<meta charset=\"utf-8\" />\n" + 
+                "</head>\n" +
                 "<body>\n" +
                 "<table>\n" +
                 "<tr><th>column0</th><th>column1</th></tr>\n" +
@@ -142,7 +144,9 @@ public class HtmlExporterTests extends RefineTest {
         }
 
         Assert.assertEquals(writer.toString(), "<html>\n" +
-                "<head><title>" + TEST_PROJECT_NAME + "</title></head>\n" +
+                "<head>\n" + "<title>" + TEST_PROJECT_NAME + "</title>\n" + 
+                "<meta charset=\"utf-8\" />\n" + 
+                "</head>\n" +
                 "<body>\n" +
                 "<table>\n" +
                 "<tr><td>row0cell0</td><td>row0cell1</td></tr>\n" +
@@ -167,7 +171,9 @@ public class HtmlExporterTests extends RefineTest {
         }
 
         Assert.assertEquals(writer.toString(), "<html>\n" +
-                "<head><title>" + TEST_PROJECT_NAME + "</title></head>\n" +
+                "<head>\n" + "<title>" + TEST_PROJECT_NAME + "</title>\n" + 
+                "<meta charset=\"utf-8\" />\n" +
+                "</head>\n" +
                 "<body>\n" +
                 "<table>\n" +
                 "<tr><th>column0</th><th>column1</th><th>column2</th></tr>\n" +

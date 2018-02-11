@@ -285,11 +285,13 @@ class RefineServer extends Server {
     // inject configuration parameters in the servlets
     // NOTE: this is done *after* starting the server because jetty might override the init
     // parameters if we set them in the webapp context upon reading the web.xml file    
+
     static private void configure(WebAppContext context) throws Exception {
         ServletHolder servlet = context.getServletHandler().getServlet("refine");
         if (servlet != null) {
             servlet.setInitParameter("refine.data", getDataDir());
             servlet.setInitParameter("butterfly.modules.path", getDataDir() + "/extensions");
+            servlet.setInitParameter("refine.autosave", Configurations.get("refine.autosave", "5")); // default: 5 minutes
             servlet.setInitOrder(1);
             servlet.doStart();
         }
@@ -360,7 +362,7 @@ class RefineServer extends Server {
                 grefineDir = new File(new File(parentDir, "Google"), "Refine");
                 gridworksDir = new File(parentDir, "Gridworks");
             }
-        } else if (os.contains("mac os x")) {
+        } else if (os.contains("os x")) {
             // on macosx, use "~/Library/Application Support"
             String home = System.getProperty("user.home");
             
